@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# VSCode
+.vscode/
+
+# Devcontainer
+.devcontainer/
+
+# Subtitles (output)
+subs/
+
+# Others
+.DS_Store
+.env

@@ -1,40 +1,40 @@
-[![CI](https://github.com/YOUR_GITHUB/YOUR_REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_GITHUB/YOUR_REPO/actions/workflows/ci.yml) [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/) [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![CI](https://github.com/xavileeee/YouTube-Subs/actions/workflows/ci.yml/badge.svg)](https://github.com/xavileeee/YouTube-Subs/actions/workflows/ci.yml) [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/) [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-# YouTube-Subs (Plantilla) 🚀
+# YouTube-Subs 🚀
 
-Pequeña plantilla para descargar subtítulos (incluyendo autogenerados) de vídeos de YouTube y mostrar la transcripción en una aplicación web simple.
+Aplicación web y herramienta CLI en Python para extraer, descargar y limpiar subtítulos (incluidos los autogenerados por IA) de vídeos de YouTube.
 
-**Nota:** Reemplaza `YOUR_GITHUB` y `YOUR_REPO` en los badges por tu nombre de usuario y repositorio en GitHub para que los badges funcionen correctamente.
+---
 
 ## ✅ Características
-- Descarga subtítulos en **es**, **en**, **fr**, **de** (revisa subtítulos cargados y, si no existen, busca en los autogenerados).
-- CLI mínima: `download_subs.py` (pasa la URL y el idioma).
-- Aplicación web en **Flask** con selector de idioma y dos vistas: **Raw** (tal cual) y **Limpia** (sin marcas de tiempo ni etiquetas).
-- Preparada para **GitHub Codespaces** / DevContainer (`.devcontainer/devcontainer.json`) y con tests básicos (`pytest`).
+
+- Descarga subtítulos en cualquier idioma (**es**, **en**, **fr**, **de**, etc.), buscando primero subtítulos subidos manualmente y, en su defecto, autogenerados.
+- **CLI Interactivo y Directo**: Asistente paso a paso o comandos de consola con múltiples opciones de formateo y exportación.
+- **Aplicación Web (Flask)**: Interface web moderna y minimalista con vista previa Raw (original) y Limpia (párrafos formateados sin marcas de tiempo).
+- **API REST (JSON)**: Endpoint programático `/api/fetch` para consumir el servicio de extracción desde otras aplicaciones o scripts.
+- **Despliegue en Producción**: Configurado y desplegado en servidor Proxmox VE con WSGI `gunicorn` y supervisión `systemd`.
 
 ---
 
 ## 🛠️ Requisitos
+
 - Python 3.10+ (o usa Codespaces / DevContainer)
 - `pip install -r requirements.txt`
-- `yt-dlp` (se instala en `requirements.txt`)
 
 ---
 
-## 🚀 Uso rápido
+## 🚀 Uso del Proyecto
 
-### 💻 CLI (Línea de Comandos)
+### 💻 1. CLI (Línea de Comandos)
 
-#### 1. Modo Interactivo (Asistente paso a paso)
-Si ejecutas el script sin argumentos, se abrirá un asistente interactivo que te guiara a través de la URL, el idioma y las opciones de guardado:
+#### Modo Interactivo (Asistente paso a paso)
+Si ejecutas el script sin argumentos, se abrirá un asistente interactivo en la terminal:
 
 ```bash
 python download_subs.py
 ```
 
-#### 2. Modo Directo (Argumentos)
-Descargar subtítulos directamente especificando la URL y opciones:
-
+#### Modo Directo (Argumentos)
 ```bash
 # Uso básico (descarga en español y muestra versiones Raw y Limpia)
 python download_subs.py "https://www.youtube.com/watch?v=VIDEO_ID"
@@ -49,16 +49,22 @@ python download_subs.py "https://www.youtube.com/watch?v=VIDEO_ID" --clean-only
 python download_subs.py -i
 ```
 
-**Opciones disponibles del CLI:**
+**Opciones del CLI:**
 - `-l`, `--lang`: Código de idioma (`es`, `en`, `fr`, `de`, etc. Por defecto: `es`).
 - `--clean-only`: Imprime únicamente la versión limpia (sin timestamps ni repeticiones).
 - `--raw-only`: Imprime únicamente la versión original (raw).
 - `-o`, `--output`: Guarda el resultado en la ruta de archivo `.txt` indicada.
 - `-i`, `--interactive`: Inicia el asistente interactivo.
 
+#### Ejecutar CLI de forma remota en tu Servidor por SSH
+Desde tu máquina local:
+```bash
+ssh -t root@192.168.1.122 "cd /opt/youtube-subs && ./venv/bin/python download_subs.py"
+```
+
 ---
 
-### 🌐 Aplicación Web
+### 🌐 2. Aplicación Web
 
 #### Producción
 Acceso directo a la aplicación desplegada en producción:
@@ -74,43 +80,64 @@ Abre `http://localhost:5555` en tu navegador.
 
 ---
 
-## 🧪 Tests
-Ejecuta los tests con:
+### 🔌 3. API REST / JSON (Consumo Programático)
 
+Puedes enviar peticiones `POST` a la API para recibir los subtítulos en formato JSON:
+
+- **Endpoint**: `POST https://subs.xavilee.com/api/fetch`
+- **Body (JSON)**: `{"url": "https://www.youtube.com/watch?v=VIDEO_ID", "lang": "es"}`
+
+#### Ejemplo cURL:
 ```bash
-pytest -q
+curl -X POST https://subs.xavilee.com/api/fetch \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://www.youtube.com/watch?v=VIDEO_ID", "lang": "es"}'
+```
+
+#### Ejemplo Python:
+```python
+import requests
+
+response = requests.post(
+    "https://subs.xavilee.com/api/fetch",
+    json={"url": "https://www.youtube.com/watch?v=VIDEO_ID", "lang": "es"}
+)
+data = response.json()
+print("Limpia:\n", data["cleaned"])
+```
+
+#### Respuesta de la API:
+```json
+{
+  "success": true,
+  "url": "https://www.youtube.com/watch?v=VIDEO_ID",
+  "lang": "es",
+  "raw": "...",
+  "cleaned": "..."
+}
 ```
 
 ---
 
-## 📦 Dev / Codespaces
-El proyecto incluye `.devcontainer/devcontainer.json` configurado para instalar dependencias automáticamente y exponer el puerto 5000.
-- En Codespaces: abre el repositorio y el contenedor instalará las dependencias.
-- Localmente: crea un virtualenv y ejecuta `pip install -r requirements.txt`.
+## 🧪 Tests
+
+Ejecuta las pruebas unitarias con `pytest`:
+
+```bash
+pytest
+```
 
 ---
 
-## ✅ Preparado para GitHub Template
-Este repositorio está pensado como plantilla. Para publicar en GitHub:
-1. Crea un nuevo repo (p. ej. `YouTube-Subs`) y sube todo.
-2. Activa la opción "Template repository" si quieres que otros puedan crear repos desde ella.
+## 📁 Archivos Importantes
 
----
-
-## 📁 Archivos importantes
-- `download_subs.py` — lógica de descarga y parsing de subtítulos.
-- `app.py` — aplicación Flask.
-- `templates/index.html` — interfaz web.
-- `.devcontainer/devcontainer.json` — configuración para Codespaces.
-- `.github/workflows/ci.yml` — CI básica con `pytest`.
-
----
-
-## 🤝 Contribuciones
-Pull requests y mejoras bienvenidas. Añade tests para nueva funcionalidad y actualiza la documentación.
+- `download_subs.py` — Lógica de extracción, deduplicación y CLI.
+- `app.py` — Aplicación Flask y API REST JSON (`/api/fetch`).
+- `templates/index.html` — Interfaz web responsive en Bootstrap 5.
+- `tests/test_cleaning.py` — Pruebas unitarias del algoritmo de limpieza.
 
 ---
 
 ## 📜 Licencia
-MIT
 
+MIT

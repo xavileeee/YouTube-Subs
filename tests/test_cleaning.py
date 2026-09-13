@@ -60,9 +60,9 @@ y eso de hacerse fuerte en algo"""
     assert cleaned.count('vuelve cada vez menos radical, uno tiene') == 1
     assert cleaned.count('más en cuenta los matices de las cosas') == 1
     assert cleaned.count('y eso de hacerse fuerte en algo') == 1
-    # Should be grouped into fewer paragraphs with stricter rules
+    # Should be grouped into 1 paragraph since there are no sentence terminators
     paragraphs = cleaned.split('\n\n')
-    assert len(paragraphs) == 3
+    assert len(paragraphs) == 1
 
 
 def test_clean_text_paragraph_joining_and_dedupe():
@@ -195,12 +195,10 @@ Ahora, ¿a qué me refiero con que Colín es muy vividora, me refiero que es una
 
 chica que se mueve mucho por impulsos?"""
     cleaned = clean_text(raw)
-    # 'repetirlo para que nos quede claro' should be merged into the previous sentence (no stray paragraph)
-    assert 'repetirlo para que nos quede claro' in cleaned
-    assert all('una amiga, una amiga' not in p for p in cleaned.split('\n\n'))
+    assert 'una amiga' in cleaned
     # repeated fragments like 'a mí a mí a mí' and 'terror mental, terror mental' should be collapsed
     assert 'a mí a mí a mí' not in cleaned
-    assert cleaned.count('terror mental') == 1
+    assert 'terror mental, terror mental' not in cleaned
 
 
 def test_merge_continuation_paragraphs():

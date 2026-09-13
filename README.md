@@ -22,22 +22,55 @@ Pequeña plantilla para descargar subtítulos (incluyendo autogenerados) de víd
 ---
 
 ## 🚀 Uso rápido
-### CLI
-Descargar subtítulos (ejemplo en español):
+
+### 💻 CLI (Línea de Comandos)
+
+#### 1. Modo Interactivo (Asistente paso a paso)
+Si ejecutas el script sin argumentos, se abrirá un asistente interactivo que te guiara a través de la URL, el idioma y las opciones de guardado:
 
 ```bash
-python download_subs.py "https://www.youtube.com/watch?v=VIDEO_ID" --lang es
+python download_subs.py
 ```
-La transcripción original y la versión limpia se imprimirán en consola y el fichero de subtítulos se guardará en `subs/`.
 
-### Web
-Inicia la app Flask en local:
+#### 2. Modo Directo (Argumentos)
+Descargar subtítulos directamente especificando la URL y opciones:
+
+```bash
+# Uso básico (descarga en español y muestra versiones Raw y Limpia)
+python download_subs.py "https://www.youtube.com/watch?v=VIDEO_ID"
+
+# Especificar idioma y guardar el resultado en un archivo .txt
+python download_subs.py "https://www.youtube.com/watch?v=VIDEO_ID" --lang en --output transcripcion.txt
+
+# Mostrar solo la transcripción limpia
+python download_subs.py "https://www.youtube.com/watch?v=VIDEO_ID" --clean-only
+
+# Forzar el modo interactivo
+python download_subs.py -i
+```
+
+**Opciones disponibles del CLI:**
+- `-l`, `--lang`: Código de idioma (`es`, `en`, `fr`, `de`, etc. Por defecto: `es`).
+- `--clean-only`: Imprime únicamente la versión limpia (sin timestamps ni repeticiones).
+- `--raw-only`: Imprime únicamente la versión original (raw).
+- `-o`, `--output`: Guarda el resultado en la ruta de archivo `.txt` indicada.
+- `-i`, `--interactive`: Inicia el asistente interactivo.
+
+---
+
+### 🌐 Aplicación Web
+
+#### Producción
+Acceso directo a la aplicación desplegada en producción:
+- **[https://subs.xavilee.com](https://subs.xavilee.com)**
+
+#### Desarrollo Local
+Inicia la app Flask localmente:
 
 ```bash
 python app.py
 ```
-
-Abre http://localhost:5000, pega la URL del vídeo y selecciona el idioma. Se mostrarán las versiones Raw y Limpia.
+Abre `http://localhost:5555` en tu navegador.
 
 ---
 

@@ -96,8 +96,11 @@ def _dedupe_repeated_sequences(text: str, max_window: int = 20) -> str:
     while i < len(words):
         removed = False
         max_w = min(max_window, (len(words) - i) // 2)
-        for w in range(max_w, 2, -1):
-            if words[i:i + w] == words[i + w:i + 2 * w]:
+        for w in range(max_w, 0, -1):
+            # Compare normalized words (lowercase without trailing/leading punctuation)
+            w1 = [re.sub(r'^\W+|\W+$', '', x.lower()) for x in words[i:i + w]]
+            w2 = [re.sub(r'^\W+|\W+$', '', x.lower()) for x in words[i + w:i + 2 * w]]
+            if w1 and w1 == w2:
                 del words[i + w:i + 2 * w]
                 removed = True
                 break
@@ -330,23 +333,106 @@ def fetch_subs(url: str, lang: str = "es") -> Tuple[str, str, Optional[str]]:
     return raw, cleaned, saved_path
 
 
+def interactive_prompt():
+    print("=" * 60)
+    print(" 🎬 YouTube-Subs CLI - Asistente Interactivo de Descarga")
+    print("=" * 60)
+
+    url = input("\n📌 Introduce la URL del vídeo de YouTube: ").strip()
+    while not url:
+        print("❌ La URL no puede estar vacía.")
+        url = input("📌 Introduce la URL del vídeo de YouTube: ").strip()
+
+    print("\n🌐 Selecciona el idioma de los subtítulos:")
+    print("  [1] Español (es) [Predeterminado]")
+    print("  [2] Inglés (en)")
+    print("  [3] Francés (fr)")
+    print("  [4] Alemán (de)")
+    print("  [5] Otro código de idioma")
+
+    choice = input("\nOpción (1-5, por defecto 1): ").strip()
+    lang_map = {"1": "es", "2": "en", "3": "fr", "4": "de"}
+
+    if choice in lang_map:
+        lang = lang_map[choice]
+    elif choice == "5":
+        lang = input("Introduce el código de idioma (ej: pt, it, ja): ").strip() or "es"
+    else:
+        lang = "es"
+
+    print("\n📄 Modo de salida:")
+    print("  [1] Ambos (Raw y Limpia) [Predeterminado]")
+    print("  [2] Solo transcripción Limpia")
+    print("  [3] Solo transcripción Raw")
+    mode_choice = input("\nOpción (1-3, por defecto 1): ").strip()
+
+    if mode_choice == "2":
+        mode = "clean"
+    elif mode_choice == "3":
+        mode = "raw"
+    else:
+        mode = "both"
+
+    output_file = input("\n💾 ¿Deseas guardar la salida en un archivo .txt específico? (Presiona Enter para omitir): ").strip()
+
+    return url, lang, mode, output_file or None
+
+
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("url", help="URL del vídeo de YouTube")
-    parser.add_argument("--lang", default="es", choices=["es", "en", "fr", "de"], help="Idioma de los subtítulos")
+    import sys
+    parser = argparse.ArgumentParser(
+        description="Herramienta CLI para descargar y limpiar subtítulos de vídeos de YouTube."
+    )
+    parser.add_argument("url", nargs="?", default=None, help="URL del vídeo de YouTube. Si no se indica, se abre el modo interactivo.")
+    parser.add_argument("-l", "--lang", default="es", help="Código de idioma de los subtítulos (ej: es, en, fr, de, pt). Por defecto 'es'.")
+    parser.add_argument("--clean-only", action="store_true", help="Imprime únicamente la transcripción limpia.")
+    parser.add_argument("--raw-only", action="store_true", help="Imprime únicamente la transcripción original (raw).")
+    parser.add_argument("-o", "--output", default=None, help="Ruta de archivo para guardar la transcripción.")
+    parser.add_argument("-i", "--interactive", action="store_true", help="Ejecuta el asistente interactivo paso a paso.")
+
     args = parser.parse_args()
 
-    try:
-        raw, cleaned, path = fetch_subs(args.url, args.lang)
-    except Exception as e:
-        print("Error:", e)
-        raise SystemExit(1)
+    if args.interactive or not args.url:
+        url, lang, mode, output_file = interactive_prompt()
+    else:
+        url = args.url
+        lang = args.lang
+        output_file = args.output
+        if args.clean_only:
+            mode = "clean"
+        elif args.raw_only:
+            mode = "raw"
+        else:
+            mode = "both"
 
-    print("Guardado:", path)
-    print("\n--- Transcripción (raw) ---\n")
-    print(raw)
-    print("\n--- Transcripción (limpia) ---\n")
-    print(cleaned)
+    print(f"\n⏳ Procesando vídeo: {url} (Idioma: {lang})...")
+    try:
+        raw, cleaned, saved_path = fetch_subs(url, lang)
+    except Exception as e:
+        print(f"\n❌ Error al obtener subtítulos: {e}")
+        sys.exit(1)
+
+    print(f"\n✅ Subtítulos descargados y guardados en: {saved_path}\n")
+
+    if mode in ("both", "raw"):
+        print("=" * 60)
+        print("--- Transcripción Original (Raw) ---")
+        print("=" * 60)
+        print(raw)
+        print()
+
+    if mode in ("both", "clean"):
+        print("=" * 60)
+        print("--- Transcripción Limpia ---")
+        print("=" * 60)
+        print(cleaned)
+        print()
+
+    if output_file:
+        content_to_save = cleaned if mode == "clean" else (raw if mode == "raw" else f"{raw}\n\n{'='*40}\n\n{cleaned}")
+        with open(output_file, "w", encoding="utf-8") as f:
+            f.write(content_to_save)
+        print(f"📁 Transcripción exportada exitosamente a: {output_file}")
 
 
 if __name__ == "__main__":
